@@ -83,7 +83,12 @@ export default function TransactionFormPage() {
 
   const { data: existingTx, isLoading: txLoading } = useQuery({
     queryKey: ['tx-latest', txId],
-    queryFn: () => apiGet<Transaction>(`/transactions/${txId}/latest`),
+    queryFn: async () => {
+      const versions = await apiGet<Transaction[]>(`/transactions/${txId}/history`);
+      const active = versions.filter((v) => v.status === 'ACTIVE');
+      const pool = active.length > 0 ? active : versions;
+      return pool.reduce((latest, v) => (v.version > latest.version ? v : latest), pool[0]);
+    },
     enabled: isEdit,
   });
 
