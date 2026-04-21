@@ -41,15 +41,25 @@ export interface Transaction {
   previousVersionId?: string;
   type: TransactionType;
   amount: number;
-  projectId: string;
+  projectId?: string;
   vendorId?: string;
   partnerId?: string;
   paidByPartnerId?: string;
+  ownerUserId?: string;
+  counterpartyName?: string;
+  counterpartyUserId?: string;
   purpose?: string;
   transactionDate: string;
   status: TransactionStatus;
   createdBy: string;
   createdAt: string;
+}
+
+export interface PersonalSummaryResponse {
+  ownerUserId: string;
+  totalIncome: number;
+  totalExpense: number;
+  netBalance: number;
 }
 
 export interface PagedResponse<T> {

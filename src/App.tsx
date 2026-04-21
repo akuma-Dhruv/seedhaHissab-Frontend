@@ -8,6 +8,8 @@ import RegisterPage from '@/pages/register';
 import ProjectsPage from '@/pages/projects';
 import ProjectDashboardPage from '@/pages/project-dashboard';
 import TransactionFormPage from '@/pages/transaction-form';
+import PersonalDashboardPage from '@/pages/personal-dashboard';
+import PersonalTransactionFormPage from '@/pages/personal-transaction-form';
 import { isAuthenticated } from '@/lib/auth';
 
 const queryClient = new QueryClient({
@@ -34,6 +36,8 @@ function App() {
             <Route path="/projects/:projectId/transactions/:txId/edit" element={<TransactionFormPage />} />
             <Route path="/projects/:projectId/transactions/new" element={<TransactionFormPage />} />
             <Route path="/projects/:projectId" element={<ProjectDashboardPage />} />
+            <Route path="/personal" element={<PersonalDashboardPage />} />
+            <Route path="/personal/transactions/new" element={<PersonalTransactionFormPage />} />
             <Route path="/" element={<Navigate to={isAuthenticated() ? '/projects' : '/login'} replace />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
