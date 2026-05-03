@@ -15,6 +15,7 @@ import PersonalCounterpartyLedgerPage from '@/pages/personal-counterparty-ledger
 import RemindersPage from '@/pages/reminders';
 import ProjectInstallmentsPage from '@/pages/project-installments';
 import InstallmentDetailPage from '@/pages/installment-detail';
+import PrivateOwnershipPage from '@/pages/private-ownership';
 import { isAuthenticated } from '@/lib/auth';
 
 const queryClient = new QueryClient({
@@ -42,6 +43,7 @@ function App() {
             <Route path="/projects/:projectId/transactions/new" element={<TransactionFormPage />} />
             <Route path="/projects/:projectId/installments" element={<ProjectInstallmentsPage />} />
             <Route path="/installments/:id" element={<InstallmentDetailPage />} />
+            <Route path="/projects/:projectId/private-ownership" element={<PrivateOwnershipPage />} />
             <Route path="/projects/:projectId" element={<ProjectDashboardPage />} />
             <Route path="/personal" element={<PersonalDashboardPage />} />
             <Route path="/personal/transactions/new" element={<PersonalTransactionFormPage />} />

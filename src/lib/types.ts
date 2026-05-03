@@ -289,3 +289,82 @@ export interface InstallmentSummaryResponse {
   totalOverdue: number;
   installmentCounts: Record<InstallmentDerivedStatus, number>;
 }
+
+// ---------------------------------------------------------------------------
+// Hidden Partner & Internal Settlement Engine
+//
+// PRIVATE OVERLAY. These types describe a creator-only redistribution layer
+// on top of an official partner's slice. They never appear in official
+// project routes (summary, partners, settlements). The backend stamps
+// `visibilityScope = "PRIVATE"` on every payload so the UI can mark it
+// clearly as internal-only.
+//
+// CRITICAL: sharePercentage is a percentage of the OFFICIAL PARTNER'S SLICE,
+// not of the project. Effective project ownership is officialShare * share/100.
+// ---------------------------------------------------------------------------
+
+export type FinancialVisibilityScope = 'OFFICIAL' | 'PRIVATE';
+
+export interface HiddenPartnerAgreement {
+  id: string;
+  projectId: string;
+  officialPartnerId: string;
+  officialPartnerName: string;
+  hiddenPartnerName: string;
+  hiddenPartnerUserId?: string;
+  /** Percentage of the official partner's slice (0-100). */
+  sharePercentage: number;
+  notes?: string;
+  archived: boolean;
+  createdAt: string;
+  updatedAt: string;
+  archivedAt?: string;
+  visibilityScope: FinancialVisibilityScope;
+}
+
+export interface HiddenPartnerAgreementRequest {
+  officialPartnerId: string;
+  hiddenPartnerName: string;
+  /** Percentage of the official partner's slice (0-100). */
+  sharePercentage: number;
+  notes?: string;
+}
+
+export interface HiddenPartnerAgreementUpdateRequest {
+  sharePercentage?: number;
+  notes?: string;
+}
+
+export interface HiddenSettlementRow {
+  /** Null on the synthetic "self" row representing the partner's retained slice. */
+  agreementId: string | null;
+  hiddenPartnerName: string;
+  selfRetained: boolean;
+  /** % of the official partner's slice. */
+  sharePercentage: number;
+  /** % of total project (officialShare * sharePercentage / 100). */
+  effectiveProjectShare: number;
+  /** Backend-derived. May be negative if the project is at a loss. */
+  expectedProfit: number;
+  /** Always 0 in v1 (derived layer; no withdrawal tracking yet). */
+  withdrawn: number;
+  /** expectedProfit - withdrawn. */
+  pendingSettlement: number;
+  visibilityScope: FinancialVisibilityScope;
+}
+
+export interface HiddenSettlementGroup {
+  officialPartnerId: string;
+  officialPartnerName: string;
+  /** Copied from official partner settlement. */
+  officialSharePercentage: number;
+  officialProfitShare: number;
+  totalHiddenSharePercentage: number;
+  selfRetainedSharePercentage: number;
+  rows: HiddenSettlementRow[];
+}
+
+export interface HiddenSettlementResponse {
+  groups: HiddenSettlementGroup[];
+  visibilityScope: FinancialVisibilityScope;
+}

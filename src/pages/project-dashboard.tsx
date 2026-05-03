@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, ArrowLeft, TrendingUp, TrendingDown, DollarSign, Users, Wallet, AlertTriangle } from 'lucide-react';
+import { Plus, ArrowLeft, TrendingUp, TrendingDown, DollarSign, Users, Wallet, AlertTriangle, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -314,8 +314,27 @@ export default function ProjectDashboardPage() {
               </div>
             </TabsContent>
 
-            <TabsContent value="settlement" className="mt-4">
+            <TabsContent value="settlement" className="mt-4 space-y-3">
               <PartnerSettlementTable projectId={projectId!} />
+              <div className="rounded-md border border-dashed border-muted-foreground/30 px-4 py-3 flex items-center justify-between gap-3 flex-wrap">
+                <div className="flex items-start gap-2">
+                  <Lock className="w-4 h-4 mt-0.5 text-muted-foreground flex-shrink-0" />
+                  <div className="text-xs text-muted-foreground max-w-md">
+                    <strong>Splitting your own share privately?</strong>{' '}
+                    Track silent investors, family or off-the-books partners
+                    on a private page. Nothing here changes the official
+                    settlement above.
+                  </div>
+                </div>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  data-testid="button-open-private-ownership"
+                  onClick={() => navigate(`/projects/${projectId}/private-ownership`)}
+                >
+                  Open private view
+                </Button>
+              </div>
             </TabsContent>
           </Tabs>
         </div>
