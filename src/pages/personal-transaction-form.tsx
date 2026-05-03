@@ -19,7 +19,14 @@ import {
   counterpartyHelperText,
   type PersonalTransactionType,
   type Transaction,
+  type CounterpartyDirection,
 } from '@/lib/types';
+import {
+  POSITIVE_LEDGER_TYPES,
+  NEGATIVE_LEDGER_TYPES,
+  formatAmount,
+} from '@/lib/ledger-format';
+import { useCounterpartyBalance } from '@/hooks/use-personal-ledger';
 
 interface FormPayload {
   type: PersonalTransactionType;
@@ -27,6 +34,62 @@ interface FormPayload {
   counterpartyName?: string;
   purpose?: string;
   transactionDate: string;
+}
+
+/**
+ * Computes what the counterparty's net balance will be *after* this
+ * transaction is saved. Mirrors PersonalLedgerSign on the backend.
+ *
+ * For edits on the same counterparty we reverse the previous version's
+ * contribution first so the projection isn't double-counted.
+ */
+function projectBalance(opts: {
+  currentNet: number;
+  type: PersonalTransactionType;
+  amount: number;
+  prev: Transaction | null;
+  counterpartyName: string;
+}): { newNet: number; direction: CounterpartyDirection } {
+  let baseline = opts.currentNet;
+
+  // Only reverse the prev version's contribution when:
+  //   (a) it's against the same counterparty (so the server's summary
+  //       includes it), and
+  //   (b) the prev version is ACTIVE — an OMITTED prev is already excluded
+  //       from cpSummary.netBalance, so reversing would double-subtract.
+  if (
+    opts.prev
+    && opts.prev.status === 'ACTIVE'
+    && opts.prev.counterpartyName
+    && opts.prev.counterpartyName.trim().toLowerCase()
+       === opts.counterpartyName.trim().toLowerCase()
+  ) {
+    const prevAmt = Number(opts.prev.amount);
+    if (POSITIVE_LEDGER_TYPES.has(opts.prev.type)) baseline -= prevAmt;
+    else if (NEGATIVE_LEDGER_TYPES.has(opts.prev.type)) baseline += prevAmt;
+  }
+
+  const amt = Number.isFinite(opts.amount) ? opts.amount : 0;
+  let newNet = baseline;
+  if (POSITIVE_LEDGER_TYPES.has(opts.type)) newNet += amt;
+  else if (NEGATIVE_LEDGER_TYPES.has(opts.type)) newNet -= amt;
+
+  const direction: CounterpartyDirection =
+    newNet > 0 ? 'THEY_OWE_ME'
+    : newNet < 0 ? 'I_OWE_THEM'
+    : 'SETTLED';
+
+  return { newNet, direction };
+}
+
+function projectedLine(name: string, p: { newNet: number; direction: CounterpartyDirection }): string {
+  if (p.direction === 'THEY_OWE_ME') {
+    return `After this: ${name} will owe you ₹${formatAmount(p.newNet)}`;
+  }
+  if (p.direction === 'I_OWE_THEM') {
+    return `After this: you'll owe ${name} ₹${formatAmount(Math.abs(p.newNet))}`;
+  }
+  return `After this: settled with ${name}`;
 }
 
 export default function PersonalTransactionFormPage() {
@@ -42,7 +105,6 @@ export default function PersonalTransactionFormPage() {
   const [purpose, setPurpose] = useState('');
   const [transactionDate, setTransactionDate] = useState(() => new Date().toISOString().slice(0, 10));
 
-  // When editing, prefill from the latest version of the transaction's history.
   const { data: history, isLoading: historyLoading } = useQuery({
     queryKey: ['personal-tx-history', editingId],
     queryFn: () => apiGet<Transaction[]>(`/personal/transactions/${editingId}/history`),
@@ -62,6 +124,29 @@ export default function PersonalTransactionFormPage() {
     setPurpose(latest.purpose ?? '');
     setTransactionDate(latest.transactionDate);
   }, [latest]);
+
+  const counterpartyRequired = COUNTERPARTY_REQUIRED_TYPES.includes(type);
+  const trimmedCp = counterpartyName.trim();
+  const helper = counterpartyHelperText(type, counterpartyName);
+
+  // Live projected balance for the entered counterparty.
+  const { summary: cpSummary, isLoading: cpLoading } = useCounterpartyBalance(counterpartyName);
+  const numericAmount = Number(amount);
+  const showProjection =
+    !!trimmedCp
+    && Number.isFinite(numericAmount)
+    && numericAmount > 0
+    && (POSITIVE_LEDGER_TYPES.has(type) || NEGATIVE_LEDGER_TYPES.has(type));
+
+  const projection = showProjection && cpSummary
+    ? projectBalance({
+        currentNet: cpSummary.netBalance,
+        type,
+        amount: numericAmount,
+        prev: latest,
+        counterpartyName: trimmedCp,
+      })
+    : null;
 
   const mutation = useMutation({
     mutationFn: (payload: FormPayload) =>
@@ -83,10 +168,6 @@ export default function PersonalTransactionFormPage() {
       toast({ title: 'Error', description: msg, variant: 'destructive' });
     },
   });
-
-  const counterpartyRequired = COUNTERPARTY_REQUIRED_TYPES.includes(type);
-  const trimmedCp = counterpartyName.trim();
-  const helper = counterpartyHelperText(type, counterpartyName);
 
   const isValid =
     amount.trim() !== '' &&
@@ -182,7 +263,24 @@ export default function PersonalTransactionFormPage() {
                       maxLength={255}
                     />
                     {helper && (
-                      <p className="text-xs text-muted-foreground" data-testid="text-personal-helper">{helper}</p>
+                      <p className="text-xs text-muted-foreground" data-testid="text-personal-helper">
+                        {helper}
+                      </p>
+                    )}
+                    {showProjection && cpLoading && (
+                      <p className="text-xs text-muted-foreground italic">Calculating new balance...</p>
+                    )}
+                    {showProjection && projection && !cpLoading && (
+                      <p
+                        className={`text-xs font-medium ${
+                          projection.direction === 'THEY_OWE_ME' ? 'text-emerald-600 dark:text-emerald-400'
+                          : projection.direction === 'I_OWE_THEM' ? 'text-rose-600 dark:text-rose-400'
+                          : 'text-muted-foreground'
+                        }`}
+                        data-testid="text-personal-projection"
+                      >
+                        {projectedLine(trimmedCp, projection)}
+                      </p>
                     )}
                   </div>
 

@@ -2,30 +2,17 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { ArrowLeft, ChevronLeft, ChevronRight, Search, Users, ArrowRight } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { apiGet } from '@/lib/api';
 import { AuthGuard } from '@/components/auth-guard';
 import { Layout } from '@/components/layout';
 import type { CounterpartySummary, PagedResponse } from '@/lib/types';
-import { motion, AnimatePresence } from 'framer-motion';
-
-function formatAmount(val: number) {
-  return new Intl.NumberFormat('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(val);
-}
-
-function summaryLine(c: CounterpartySummary): { text: string; tone: 'emerald' | 'rose' | 'muted' } {
-  if (c.direction === 'THEY_OWE_ME') {
-    return { text: `${c.counterpartyName} owes you ₹${formatAmount(c.netBalance)}`, tone: 'emerald' };
-  }
-  if (c.direction === 'I_OWE_THEM') {
-    return { text: `You owe ${c.counterpartyName} ₹${formatAmount(Math.abs(c.netBalance))}`, tone: 'rose' };
-  }
-  return { text: `All settled with ${c.counterpartyName}`, tone: 'muted' };
-}
+import { BalanceBadge, BalanceText } from '@/components/ledger/balance-line';
+import { formatAmount } from '@/lib/ledger-format';
 
 export default function PersonalCounterpartiesPage() {
   const navigate = useNavigate();
@@ -50,7 +37,12 @@ export default function PersonalCounterpartiesPage() {
       <Layout>
         <div className="space-y-6">
           <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon" onClick={() => navigate('/personal')} data-testid="button-counterparties-back">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigate('/personal')}
+              data-testid="button-counterparties-back"
+            >
               <ArrowLeft className="w-4 h-4" />
             </Button>
             <div className="flex-1">
@@ -87,63 +79,56 @@ export default function PersonalCounterpartiesPage() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <AnimatePresence>
-                {counterparties.map((c, i) => {
-                  const line = summaryLine(c);
-                  return (
-                    <motion.div
-                      key={c.counterpartyName}
-                      initial={{ opacity: 0, y: 6 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0 }}
-                      transition={{ delay: i * 0.03 }}
+                {counterparties.map((c, i) => (
+                  <motion.div
+                    key={c.counterpartyName}
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ delay: i * 0.03 }}
+                  >
+                    <Card
+                      className="cursor-pointer hover:border-primary/50 transition-colors"
+                      data-testid={`card-counterparty-${c.counterpartyName}`}
+                      onClick={() => navigate(`/personal/counterparties/${encodeURIComponent(c.counterpartyName)}`)}
                     >
-                      <Card
-                        className="cursor-pointer hover:border-primary/50 transition-colors"
-                        data-testid={`card-counterparty-${c.counterpartyName}`}
-                        onClick={() => navigate(`/personal/counterparties/${encodeURIComponent(c.counterpartyName)}`)}
-                      >
-                        <CardContent className="py-4 px-5">
-                          <div className="flex items-start justify-between gap-3">
-                            <div className="min-w-0 flex-1">
-                              <div className="flex items-center gap-2 flex-wrap">
-                                <p className="font-semibold truncate" data-testid={`text-cp-name-${c.counterpartyName}`}>
-                                  {c.counterpartyName}
-                                </p>
-                                <Badge
-                                  variant={c.direction === 'SETTLED' ? 'secondary' : 'outline'}
-                                  className={`text-xs ${
-                                    line.tone === 'emerald' ? 'border-emerald-500/50 text-emerald-700 dark:text-emerald-400' : ''
-                                  } ${
-                                    line.tone === 'rose' ? 'border-rose-500/50 text-rose-700 dark:text-rose-400' : ''
-                                  }`}
-                                  data-testid={`badge-cp-direction-${c.counterpartyName}`}
-                                >
-                                  {c.direction === 'THEY_OWE_ME' && 'They owe you'}
-                                  {c.direction === 'I_OWE_THEM' && 'You owe'}
-                                  {c.direction === 'SETTLED' && 'Settled'}
-                                </Badge>
-                              </div>
-                              <p className={`text-sm mt-1.5 ${
-                                line.tone === 'emerald' ? 'text-emerald-700 dark:text-emerald-400' : ''
-                              } ${
-                                line.tone === 'rose' ? 'text-rose-700 dark:text-rose-400' : ''
-                              } ${
-                                line.tone === 'muted' ? 'text-muted-foreground' : ''
-                              }`}>
-                                {line.text}
+                      <CardContent className="py-4 px-5">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <p
+                                className="font-semibold truncate"
+                                data-testid={`text-cp-name-${c.counterpartyName}`}
+                              >
+                                {c.counterpartyName}
                               </p>
-                              <div className="flex gap-4 mt-2 text-xs text-muted-foreground">
-                                <span>Given: <span className="font-medium text-foreground">{formatAmount(c.totalGiven)}</span></span>
-                                <span>Received: <span className="font-medium text-foreground">{formatAmount(c.totalReceived)}</span></span>
-                              </div>
+                              <BalanceBadge
+                                direction={c.direction}
+                                testId={`badge-cp-direction-${c.counterpartyName}`}
+                              />
                             </div>
-                            <ArrowRight className="w-4 h-4 text-muted-foreground flex-shrink-0 mt-1" />
+                            <BalanceText summary={c} className="text-sm mt-1.5" />
+                            <div className="flex gap-4 mt-2 text-xs text-muted-foreground">
+                              <span>
+                                Given:{' '}
+                                <span className="font-medium text-foreground">
+                                  {formatAmount(c.totalGiven)}
+                                </span>
+                              </span>
+                              <span>
+                                Received:{' '}
+                                <span className="font-medium text-foreground">
+                                  {formatAmount(c.totalReceived)}
+                                </span>
+                              </span>
+                            </div>
                           </div>
-                        </CardContent>
-                      </Card>
-                    </motion.div>
-                  );
-                })}
+                          <ArrowRight className="w-4 h-4 text-muted-foreground flex-shrink-0 mt-1" />
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                ))}
               </AnimatePresence>
             </div>
           )}
@@ -159,7 +144,9 @@ export default function PersonalCounterpartiesPage() {
               >
                 <ChevronLeft className="w-4 h-4 mr-1" /> Previous
               </Button>
-              <span className="text-sm text-muted-foreground">Page {page + 1} of {totalPages}</span>
+              <span className="text-sm text-muted-foreground">
+                Page {page + 1} of {totalPages}
+              </span>
               <Button
                 variant="outline"
                 size="sm"
