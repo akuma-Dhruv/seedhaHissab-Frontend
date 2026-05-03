@@ -368,3 +368,30 @@ export interface HiddenSettlementResponse {
   groups: HiddenSettlementGroup[];
   visibilityScope: FinancialVisibilityScope;
 }
+
+// =============================================================================
+// Project members (collaboration v1)
+// =============================================================================
+
+export type ProjectMemberRole = 'OWNER' | 'EDITOR' | 'ACCOUNTANT' | 'VIEWER';
+
+export interface ProjectMember {
+  id: string;
+  projectId: string;
+  userId: string;
+  userName: string | null;
+  userEmail: string | null;
+  role: ProjectMemberRole;
+  invitedByUserId: string | null;
+  createdAt: string | null;
+  archivedAt: string | null;
+}
+
+export interface ProjectMemberInviteRequest {
+  email: string;
+  role: ProjectMemberRole;
+}
+
+export interface ProjectMemberRoleUpdateRequest {
+  role: ProjectMemberRole;
+}

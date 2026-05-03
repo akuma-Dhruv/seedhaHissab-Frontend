@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, ArrowLeft, TrendingUp, TrendingDown, DollarSign, Users, Wallet, AlertTriangle, Lock, Activity } from 'lucide-react';
+import { Plus, ArrowLeft, TrendingUp, TrendingDown, DollarSign, Users, Wallet, AlertTriangle, Lock, Activity, UserCog } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -117,6 +117,14 @@ export default function ProjectDashboardPage() {
               )}
             </div>
             <div className="flex gap-2">
+              <Button
+                variant="outline"
+                data-testid="button-project-members"
+                onClick={() => navigate(`/projects/${projectId}/members`)}
+              >
+                <UserCog className="w-4 h-4 mr-2" />
+                Members
+              </Button>
               <Button
                 variant="outline"
                 data-testid="button-project-activity"

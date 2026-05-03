@@ -15,3 +15,21 @@ export function removeToken(): void {
 export function isAuthenticated(): boolean {
   return !!getToken();
 }
+
+/**
+ * Returns the current user's UUID by decoding the JWT subject claim, or
+ * null if not authenticated / the token is malformed. Used by the
+ * collaboration UI to highlight the caller's own membership row.
+ */
+export function getCurrentUserId(): string | null {
+  const token = getToken();
+  if (!token) return null;
+  try {
+    const payload = token.split('.')[1];
+    const json = atob(payload.replace(/-/g, '+').replace(/_/g, '/'));
+    const decoded = JSON.parse(json) as { sub?: string };
+    return decoded.sub ?? null;
+  } catch {
+    return null;
+  }
+}

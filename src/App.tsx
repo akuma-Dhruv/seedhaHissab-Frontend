@@ -17,6 +17,7 @@ import ProjectInstallmentsPage from '@/pages/project-installments';
 import InstallmentDetailPage from '@/pages/installment-detail';
 import PrivateOwnershipPage from '@/pages/private-ownership';
 import ProjectActivityPage from '@/pages/project-activity';
+import ProjectMembersPage from '@/pages/project-members';
 import PersonalActivityPage from '@/pages/personal-activity';
 import CounterpartyActivityPage from '@/pages/counterparty-activity';
 import { isAuthenticated } from '@/lib/auth';
@@ -48,6 +49,7 @@ function App() {
             <Route path="/installments/:id" element={<InstallmentDetailPage />} />
             <Route path="/projects/:projectId/private-ownership" element={<PrivateOwnershipPage />} />
             <Route path="/projects/:projectId/activity" element={<ProjectActivityPage />} />
+            <Route path="/projects/:projectId/members" element={<ProjectMembersPage />} />
             <Route path="/personal/activity" element={<PersonalActivityPage />} />
             <Route path="/personal/counterparties/:name/activity" element={<CounterpartyActivityPage />} />
             <Route path="/projects/:projectId" element={<ProjectDashboardPage />} />
