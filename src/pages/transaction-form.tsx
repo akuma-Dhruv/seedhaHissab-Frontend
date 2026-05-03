@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useEffect } from 'react';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -24,6 +24,7 @@ import { AuthGuard } from '@/components/auth-guard';
 import { Layout } from '@/components/layout';
 import type { Partner, Vendor, Transaction } from '@/lib/types';
 import { TRANSACTION_TYPE_LABELS } from '@/lib/types';
+import { useInstallments } from '@/hooks/use-installments';
 
 const PROJECT_TYPES = ['EXPENSE', 'INCOME', 'VENDOR_SUPPLY', 'VENDOR_PAYMENT', 'PARTNER_SETTLEMENT', 'PROFIT_WITHDRAWAL'] as const;
 type ProjectTransactionType = typeof PROJECT_TYPES[number];
@@ -36,6 +37,7 @@ const schema = z.object({
   vendorId: z.string().optional(),
   partnerId: z.string().optional(),
   paidByPartnerId: z.string().optional(),
+  linkedInstallmentId: z.string().optional(),
 }).superRefine((data, ctx) => {
   if ((data.type === 'VENDOR_SUPPLY' || data.type === 'VENDOR_PAYMENT') && !data.vendorId) {
     ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Vendor is required for this transaction type', path: ['vendorId'] });
@@ -52,6 +54,8 @@ type FormData = z.infer<typeof schema>;
 
 export default function TransactionFormPage() {
   const { projectId, txId } = useParams<{ projectId: string; txId?: string }>();
+  const [searchParams] = useSearchParams();
+  const prefillInstallmentId = searchParams.get('linkedInstallmentId') ?? undefined;
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -60,17 +64,47 @@ export default function TransactionFormPage() {
   const form = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: {
-      type: 'EXPENSE',
+      type: prefillInstallmentId ? 'INCOME' : 'EXPENSE',
       amount: '',
       transactionDate: new Date().toISOString().slice(0, 10),
       purpose: '',
       vendorId: '',
       partnerId: '',
       paidByPartnerId: '',
+      linkedInstallmentId: prefillInstallmentId ?? '',
     },
   });
 
   const selectedType = form.watch('type');
+
+  // Backend rule: linkedInstallmentId is INCOME-only. Strip it when the user
+  // changes type so we don't send a stale id and trip the 400 validation.
+  useEffect(() => {
+    if (selectedType !== 'INCOME' && form.getValues('linkedInstallmentId')) {
+      form.setValue('linkedInstallmentId', '');
+    }
+  }, [selectedType, form]);
+
+  // Eligible attach targets for INCOME — pending or partially-received.
+  // We pull both buckets and merge so the dropdown shows all openable
+  // installments without two queries inside the form.
+  const pendingInstallments = useInstallments(projectId, {
+    status: 'PENDING',
+    limit: 50,
+  });
+  const partialInstallments = useInstallments(projectId, {
+    status: 'PARTIALLY_RECEIVED',
+    limit: 50,
+  });
+  const overdueInstallments = useInstallments(projectId, {
+    status: 'OVERDUE',
+    limit: 50,
+  });
+  const eligibleInstallments = [
+    ...(pendingInstallments.data?.data ?? []),
+    ...(partialInstallments.data?.data ?? []),
+    ...(overdueInstallments.data?.data ?? []),
+  ];
 
   const { data: partners } = useQuery({
     queryKey: ['partners', projectId],
@@ -105,6 +139,7 @@ export default function TransactionFormPage() {
         vendorId: existingTx.vendorId ?? '',
         partnerId: existingTx.partnerId ?? '',
         paidByPartnerId: existingTx.paidByPartnerId ?? '',
+        linkedInstallmentId: existingTx.linkedInstallmentId ?? '',
       });
     }
   }, [existingTx, form]);
@@ -145,6 +180,9 @@ export default function TransactionFormPage() {
     }
     if (data.type === 'PARTNER_SETTLEMENT' || data.type === 'PROFIT_WITHDRAWAL') {
       if (data.partnerId) payload.partnerId = data.partnerId;
+    }
+    if (data.type === 'INCOME' && data.linkedInstallmentId) {
+      payload.linkedInstallmentId = data.linkedInstallmentId;
     }
 
     mutation.mutate(payload);
@@ -290,6 +328,39 @@ export default function TransactionFormPage() {
                       {form.formState.errors.partnerId && (
                         <p className="text-xs text-destructive">{form.formState.errors.partnerId.message}</p>
                       )}
+                    </div>
+                  )}
+
+                  {selectedType === 'INCOME' && (
+                    <div className="space-y-1.5">
+                      <Label>Attach to installment (optional)</Label>
+                      <Select
+                        value={form.watch('linkedInstallmentId') || '__none__'}
+                        onValueChange={(val) =>
+                          form.setValue('linkedInstallmentId', val === '__none__' ? '' : val)
+                        }
+                      >
+                        <SelectTrigger data-testid="select-linked-installment">
+                          <SelectValue placeholder="Standalone income (no installment)" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="__none__" data-testid="option-installment-none">
+                            Standalone income (no installment)
+                          </SelectItem>
+                          {eligibleInstallments.map((i) => (
+                            <SelectItem
+                              key={i.id}
+                              value={i.id}
+                              data-testid={`option-installment-${i.id}`}
+                            >
+                              {i.title} — {i.customerName ?? 'Customer'} (₹{Number(i.remainingAmount).toFixed(2)} pending)
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <p className="text-xs text-muted-foreground">
+                        Only pending or partially-received installments can be attached.
+                      </p>
                     </div>
                   )}
 

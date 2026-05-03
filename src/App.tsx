@@ -13,6 +13,8 @@ import PersonalTransactionFormPage from '@/pages/personal-transaction-form';
 import PersonalCounterpartiesPage from '@/pages/personal-counterparties';
 import PersonalCounterpartyLedgerPage from '@/pages/personal-counterparty-ledger';
 import RemindersPage from '@/pages/reminders';
+import ProjectInstallmentsPage from '@/pages/project-installments';
+import InstallmentDetailPage from '@/pages/installment-detail';
 import { isAuthenticated } from '@/lib/auth';
 
 const queryClient = new QueryClient({
@@ -38,6 +40,8 @@ function App() {
             <Route path="/projects" element={<ProjectsPage />} />
             <Route path="/projects/:projectId/transactions/:txId/edit" element={<TransactionFormPage />} />
             <Route path="/projects/:projectId/transactions/new" element={<TransactionFormPage />} />
+            <Route path="/projects/:projectId/installments" element={<ProjectInstallmentsPage />} />
+            <Route path="/installments/:id" element={<InstallmentDetailPage />} />
             <Route path="/projects/:projectId" element={<ProjectDashboardPage />} />
             <Route path="/personal" element={<PersonalDashboardPage />} />
             <Route path="/personal/transactions/new" element={<PersonalTransactionFormPage />} />

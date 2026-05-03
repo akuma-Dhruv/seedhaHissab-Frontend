@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, ArrowLeft, TrendingUp, TrendingDown, DollarSign, Users } from 'lucide-react';
+import { Plus, ArrowLeft, TrendingUp, TrendingDown, DollarSign, Users, Wallet, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -18,6 +18,9 @@ import { TransactionList } from '@/components/transaction-list';
 import { VendorLedgerTable } from '@/components/vendor-ledger-table';
 import { PartnerSettlementTable } from '@/components/partner-settlement-table';
 import { RemindersWidget } from '@/components/reminders/reminders-widget';
+import { InstallmentsWidget } from '@/components/installments/installments-widget';
+import { InstallmentForm } from '@/components/installments/installment-form';
+import { useInstallmentSummary } from '@/hooks/use-installments';
 import type { Project, Partner, Vendor, ProjectSummaryResponse } from '@/lib/types';
 import { motion } from 'framer-motion';
 
@@ -33,6 +36,7 @@ export default function ProjectDashboardPage() {
 
   const [partnerDialogOpen, setPartnerDialogOpen] = useState(false);
   const [vendorDialogOpen, setVendorDialogOpen] = useState(false);
+  const [installmentDialogOpen, setInstallmentDialogOpen] = useState(false);
   const [partnerName, setPartnerName] = useState('');
   const [partnerShare, setPartnerShare] = useState('');
   const [vendorName, setVendorName] = useState('');
@@ -60,6 +64,8 @@ export default function ProjectDashboardPage() {
     queryFn: () => apiGet<Vendor[]>(`/projects/${projectId}/vendors`),
     enabled: !!projectId,
   });
+
+  const { data: installmentSummary } = useInstallmentSummary(projectId);
 
   const addPartnerMutation = useMutation({
     mutationFn: (data: { name: string; sharePercentage: number }) =>
@@ -180,6 +186,74 @@ export default function ProjectDashboardPage() {
             </TabsList>
 
             <TabsContent value="transactions" className="mt-4 space-y-4">
+              {installmentSummary &&
+                (Number(installmentSummary.totalExpected) > 0 ||
+                  Number(installmentSummary.totalReceived) > 0) && (
+                <motion.div
+                  className="grid grid-cols-1 sm:grid-cols-3 gap-4"
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                >
+                  <Card>
+                    <CardContent className="py-4 px-5">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">
+                            Receivables
+                          </p>
+                          <p
+                            className="text-xl font-semibold mt-1"
+                            data-testid="text-receivable-expected"
+                          >
+                            {formatAmount(Number(installmentSummary.totalExpected))}
+                          </p>
+                        </div>
+                        <Wallet className="w-8 h-8 text-primary/20" />
+                      </div>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="py-4 px-5">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">
+                            Pending
+                          </p>
+                          <p
+                            className="text-xl font-semibold mt-1 text-amber-600 dark:text-amber-400"
+                            data-testid="text-receivable-pending"
+                          >
+                            {formatAmount(Number(installmentSummary.totalPending))}
+                          </p>
+                        </div>
+                        <DollarSign className="w-8 h-8 text-amber-500/30" />
+                      </div>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="py-4 px-5">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">
+                            Overdue
+                          </p>
+                          <p
+                            className="text-xl font-semibold mt-1 text-rose-600 dark:text-rose-400"
+                            data-testid="text-receivable-overdue"
+                          >
+                            {formatAmount(Number(installmentSummary.totalOverdue))}
+                          </p>
+                        </div>
+                        <AlertTriangle className="w-8 h-8 text-rose-500/30" />
+                      </div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              )}
+              <InstallmentsWidget
+                projectId={projectId!}
+                onCreateClick={() => setInstallmentDialogOpen(true)}
+              />
               <RemindersWidget
                 projectId={projectId}
                 title="Project reminders"
@@ -284,6 +358,14 @@ export default function ProjectDashboardPage() {
             </div>
           </DialogContent>
         </Dialog>
+
+        {projectId && (
+          <InstallmentForm
+            open={installmentDialogOpen}
+            onOpenChange={setInstallmentDialogOpen}
+            projectId={projectId}
+          />
+        )}
 
         <Dialog open={vendorDialogOpen} onOpenChange={setVendorDialogOpen}>
           <DialogContent>

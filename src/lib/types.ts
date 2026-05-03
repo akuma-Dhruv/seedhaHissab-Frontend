@@ -57,6 +57,8 @@ export interface Transaction {
   vendorId?: string;
   partnerId?: string;
   paidByPartnerId?: string;
+  /** Set ONLY when type='INCOME' and an installment was attached. */
+  linkedInstallmentId?: string;
   ownerUserId?: string;
   counterpartyName?: string;
   counterpartyUserId?: string;
@@ -101,6 +103,7 @@ export interface Reminder {
   linkedTransactionId?: string;
   linkedProjectId?: string;
   linkedCounterpartyName?: string;
+  linkedInstallmentId?: string;
   createdByUserId: string;
   createdAt: string;
   updatedAt: string;
@@ -113,6 +116,7 @@ export interface ReminderRequest {
   linkedTransactionId?: string;
   linkedProjectId?: string;
   linkedCounterpartyName?: string;
+  linkedInstallmentId?: string;
 }
 
 export interface ReminderSnoozeRequest {
@@ -213,4 +217,75 @@ export function counterpartyHelperText(type: PersonalTransactionType, name: stri
     default:
       return null;
   }
+}
+
+// ---------------------------------------------------------------------------
+// Project Installment & Receivable Engine
+//
+// CRITICAL: receivedAmount, remainingAmount, overCollected, and status are
+// produced by the BACKEND. The frontend renders them as-is and never
+// recomputes. See InstallmentService on the server for the derivation rules.
+// ---------------------------------------------------------------------------
+
+export interface Customer {
+  id: string;
+  name: string;
+  phone?: string;
+  notes?: string;
+  createdByUserId: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CustomerRequest {
+  name: string;
+  phone?: string;
+  notes?: string;
+}
+
+export type InstallmentDerivedStatus =
+  | 'PENDING'
+  | 'PARTIALLY_RECEIVED'
+  | 'RECEIVED'
+  | 'OVERDUE'
+  | 'CANCELLED';
+
+export interface Installment {
+  id: string;
+  projectId: string;
+  customerId: string;
+  customerName?: string;
+  title: string;
+  description?: string;
+  expectedAmount: number;
+  dueDate: string;
+  /** Backend-derived. Render as-is, never recompute. */
+  receivedAmount: number;
+  /** Backend-derived. max(0, expected - received). */
+  remainingAmount: number;
+  /** Backend-derived. True when received > expected. */
+  overCollected: boolean;
+  /** Backend-derived authoritative status. */
+  status: InstallmentDerivedStatus;
+  /** Populated only by the single-installment endpoint. */
+  linkedPayments?: Transaction[];
+  createdByUserId: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface InstallmentRequest {
+  customerId: string;
+  title: string;
+  description?: string;
+  expectedAmount: number;
+  dueDate: string;
+}
+
+export interface InstallmentSummaryResponse {
+  totalExpected: number;
+  totalReceived: number;
+  totalPending: number;
+  totalOverdue: number;
+  installmentCounts: Record<InstallmentDerivedStatus, number>;
 }
