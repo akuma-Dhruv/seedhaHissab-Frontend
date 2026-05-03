@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { Plus, TrendingUp, TrendingDown, Wallet, Users, ArrowUpCircle, ArrowDownCircle } from 'lucide-react';
+import { Plus, TrendingUp, TrendingDown, Wallet, Users, ArrowUpCircle, ArrowDownCircle, Activity } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -70,6 +70,14 @@ export default function PersonalDashboardPage() {
               <p className="text-sm text-muted-foreground mt-1">Your person-to-person money in &amp; out</p>
             </div>
             <div className="flex gap-2">
+              <Button
+                variant="outline"
+                data-testid="button-personal-activity"
+                onClick={() => navigate('/personal/activity')}
+              >
+                <Activity className="w-4 h-4 mr-2" />
+                Activity
+              </Button>
               <Button
                 variant="outline"
                 data-testid="button-view-counterparties"

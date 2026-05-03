@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { ArrowLeft, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ArrowLeft, ChevronLeft, ChevronRight, Activity } from 'lucide-react';
 import { AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -80,6 +80,15 @@ export default function PersonalCounterpartyLedgerPage() {
               </h1>
               <p className="text-sm text-muted-foreground mt-1">Person-to-person ledger</p>
             </div>
+            <Button
+              variant="outline"
+              size="sm"
+              data-testid="button-counterparty-activity"
+              onClick={() => navigate(`/personal/counterparties/${encodedName}/activity`)}
+            >
+              <Activity className="w-4 h-4 mr-2" />
+              History
+            </Button>
           </div>
 
           {summary && (

@@ -16,6 +16,9 @@ import RemindersPage from '@/pages/reminders';
 import ProjectInstallmentsPage from '@/pages/project-installments';
 import InstallmentDetailPage from '@/pages/installment-detail';
 import PrivateOwnershipPage from '@/pages/private-ownership';
+import ProjectActivityPage from '@/pages/project-activity';
+import PersonalActivityPage from '@/pages/personal-activity';
+import CounterpartyActivityPage from '@/pages/counterparty-activity';
 import { isAuthenticated } from '@/lib/auth';
 
 const queryClient = new QueryClient({
@@ -44,6 +47,9 @@ function App() {
             <Route path="/projects/:projectId/installments" element={<ProjectInstallmentsPage />} />
             <Route path="/installments/:id" element={<InstallmentDetailPage />} />
             <Route path="/projects/:projectId/private-ownership" element={<PrivateOwnershipPage />} />
+            <Route path="/projects/:projectId/activity" element={<ProjectActivityPage />} />
+            <Route path="/personal/activity" element={<PersonalActivityPage />} />
+            <Route path="/personal/counterparties/:name/activity" element={<CounterpartyActivityPage />} />
             <Route path="/projects/:projectId" element={<ProjectDashboardPage />} />
             <Route path="/personal" element={<PersonalDashboardPage />} />
             <Route path="/personal/transactions/new" element={<PersonalTransactionFormPage />} />
