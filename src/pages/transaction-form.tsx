@@ -22,11 +22,14 @@ import { useToast } from '@/hooks/use-toast';
 import { apiGet, apiPost, apiPut } from '@/lib/api';
 import { AuthGuard } from '@/components/auth-guard';
 import { Layout } from '@/components/layout';
-import type { Partner, Vendor, Transaction, TransactionType } from '@/lib/types';
+import type { Partner, Vendor, Transaction } from '@/lib/types';
 import { TRANSACTION_TYPE_LABELS } from '@/lib/types';
 
+const PROJECT_TYPES = ['EXPENSE', 'INCOME', 'VENDOR_SUPPLY', 'VENDOR_PAYMENT', 'PARTNER_SETTLEMENT', 'PROFIT_WITHDRAWAL'] as const;
+type ProjectTransactionType = typeof PROJECT_TYPES[number];
+
 const schema = z.object({
-  type: z.enum(['EXPENSE', 'INCOME', 'VENDOR_SUPPLY', 'VENDOR_PAYMENT', 'PARTNER_SETTLEMENT', 'PROFIT_WITHDRAWAL']),
+  type: z.enum(PROJECT_TYPES),
   amount: z.string().min(1, 'Amount is required').refine(v => !isNaN(Number(v)) && Number(v) > 0, 'Must be a positive number'),
   transactionDate: z.string().min(1, 'Date is required'),
   purpose: z.string().optional(),
@@ -67,7 +70,7 @@ export default function TransactionFormPage() {
     },
   });
 
-  const selectedType = form.watch('type') as TransactionType;
+  const selectedType = form.watch('type');
 
   const { data: partners } = useQuery({
     queryKey: ['partners', projectId],
@@ -95,7 +98,7 @@ export default function TransactionFormPage() {
   useEffect(() => {
     if (existingTx) {
       form.reset({
-        type: existingTx.type,
+        type: existingTx.type as ProjectTransactionType,
         amount: String(existingTx.amount),
         transactionDate: existingTx.transactionDate,
         purpose: existingTx.purpose ?? '',
@@ -181,7 +184,7 @@ export default function TransactionFormPage() {
                     <Label>Transaction Type</Label>
                     <Select
                       value={form.watch('type')}
-                      onValueChange={val => form.setValue('type', val as TransactionType)}
+                      onValueChange={val => form.setValue('type', val as ProjectTransactionType)}
                     >
                       <SelectTrigger data-testid="select-type">
                         <SelectValue />

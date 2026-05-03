@@ -30,7 +30,19 @@ export type TransactionType =
   | 'VENDOR_SUPPLY'
   | 'VENDOR_PAYMENT'
   | 'PARTNER_SETTLEMENT'
-  | 'PROFIT_WITHDRAWAL';
+  | 'PROFIT_WITHDRAWAL'
+  | 'LEND'
+  | 'BORROW'
+  | 'REPAYMENT_GIVEN'
+  | 'REPAYMENT_RECEIVED';
+
+export type PersonalTransactionType =
+  | 'EXPENSE'
+  | 'INCOME'
+  | 'LEND'
+  | 'BORROW'
+  | 'REPAYMENT_GIVEN'
+  | 'REPAYMENT_RECEIVED';
 
 export type TransactionStatus = 'ACTIVE' | 'OMITTED';
 
@@ -59,7 +71,21 @@ export interface PersonalSummaryResponse {
   ownerUserId: string;
   totalIncome: number;
   totalExpense: number;
+  totalLent: number;
+  totalBorrowed: number;
+  totalReceivable: number;
+  totalPayable: number;
   netBalance: number;
+}
+
+export type CounterpartyDirection = 'THEY_OWE_ME' | 'I_OWE_THEM' | 'SETTLED';
+
+export interface CounterpartySummary {
+  counterpartyName: string;
+  totalGiven: number;
+  totalReceived: number;
+  netBalance: number;
+  direction: CounterpartyDirection;
 }
 
 export interface PagedResponse<T> {
@@ -105,4 +131,48 @@ export const TRANSACTION_TYPE_LABELS: Record<TransactionType, string> = {
   VENDOR_PAYMENT: 'Vendor Payment',
   PARTNER_SETTLEMENT: 'Adjustment',
   PROFIT_WITHDRAWAL: 'Profit Withdrawal',
+  LEND: 'Lent Money',
+  BORROW: 'Borrowed Money',
+  REPAYMENT_GIVEN: 'Repaid Someone',
+  REPAYMENT_RECEIVED: 'Received Repayment',
 };
+
+export const PERSONAL_TYPE_OPTIONS: { value: PersonalTransactionType; label: string }[] = [
+  { value: 'EXPENSE', label: 'Expense (I paid)' },
+  { value: 'INCOME', label: 'Income (I received)' },
+  { value: 'LEND', label: 'Lent Money' },
+  { value: 'BORROW', label: 'Borrowed Money' },
+  { value: 'REPAYMENT_GIVEN', label: 'Repaid Someone' },
+  { value: 'REPAYMENT_RECEIVED', label: 'Received Repayment' },
+];
+
+export const COUNTERPARTY_REQUIRED_TYPES: PersonalTransactionType[] = [
+  'LEND',
+  'BORROW',
+  'REPAYMENT_GIVEN',
+  'REPAYMENT_RECEIVED',
+];
+
+/**
+ * Returns a friendly helper line for the personal-transaction form,
+ * mirroring the centralized backend sign convention.
+ */
+export function counterpartyHelperText(type: PersonalTransactionType, name: string): string | null {
+  const cp = name.trim() || 'them';
+  switch (type) {
+    case 'LEND':
+      return `${cp} now owes you`;
+    case 'BORROW':
+      return `You now owe ${cp}`;
+    case 'REPAYMENT_GIVEN':
+      return `Reduces what you owe ${cp}`;
+    case 'REPAYMENT_RECEIVED':
+      return `Reduces what ${cp} owes you`;
+    case 'EXPENSE':
+      return name.trim() ? `Counted as money you gave to ${cp}` : null;
+    case 'INCOME':
+      return name.trim() ? `Counted as money you received from ${cp}` : null;
+    default:
+      return null;
+  }
+}

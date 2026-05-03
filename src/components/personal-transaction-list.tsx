@@ -1,6 +1,7 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { History, Ban, ChevronLeft, ChevronRight, ArrowUpRight, ArrowDownRight } from 'lucide-react';
+import { History, Ban, ChevronLeft, ChevronRight, ArrowUpRight, ArrowDownRight, Pencil } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
@@ -31,7 +32,10 @@ function formatDate(date: string) {
   return new Date(date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
 }
 
+const POSITIVE_TYPES = new Set(['INCOME', 'BORROW', 'REPAYMENT_RECEIVED']);
+
 export function PersonalTransactionList() {
+  const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -61,6 +65,8 @@ export function PersonalTransactionList() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['personal-transactions'] });
       queryClient.invalidateQueries({ queryKey: ['personal-summary'] });
+      queryClient.invalidateQueries({ queryKey: ['personal-counterparties'] });
+      queryClient.invalidateQueries({ queryKey: ['personal-counterparty-ledger'] });
       toast({ title: 'Transaction omitted' });
       setOmitTarget(null);
     },
@@ -103,7 +109,7 @@ export function PersonalTransactionList() {
         <div className="space-y-2">
           <AnimatePresence>
             {transactions.map((tx, i) => {
-              const isIncome = tx.type === 'INCOME';
+              const isIncome = POSITIVE_TYPES.has(tx.type);
               return (
                 <motion.div
                   key={tx.id}
@@ -173,6 +179,18 @@ export function PersonalTransactionList() {
                       >
                         <History className="w-3.5 h-3.5" />
                       </Button>
+                      {tx.status === 'ACTIVE' && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7"
+                          data-testid={`button-personal-tx-edit-${tx.id}`}
+                          onClick={() => navigate(`/personal/transactions/${tx.id}/edit`)}
+                          title="Edit transaction"
+                        >
+                          <Pencil className="w-3.5 h-3.5" />
+                        </Button>
+                      )}
                       {tx.status === 'ACTIVE' && (
                         <Button
                           variant="ghost"
