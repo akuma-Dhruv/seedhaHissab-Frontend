@@ -12,6 +12,7 @@ import PersonalDashboardPage from '@/pages/personal-dashboard';
 import PersonalTransactionFormPage from '@/pages/personal-transaction-form';
 import PersonalCounterpartiesPage from '@/pages/personal-counterparties';
 import PersonalCounterpartyLedgerPage from '@/pages/personal-counterparty-ledger';
+import RemindersPage from '@/pages/reminders';
 import { isAuthenticated } from '@/lib/auth';
 
 const queryClient = new QueryClient({
@@ -43,6 +44,7 @@ function App() {
             <Route path="/personal/transactions/:id/edit" element={<PersonalTransactionFormPage />} />
             <Route path="/personal/counterparties" element={<PersonalCounterpartiesPage />} />
             <Route path="/personal/counterparties/:name" element={<PersonalCounterpartyLedgerPage />} />
+            <Route path="/reminders" element={<RemindersPage />} />
             <Route path="/" element={<Navigate to={isAuthenticated() ? '/projects' : '/login'} replace />} />
             <Route path="*" element={<NotFound />} />
           </Routes>

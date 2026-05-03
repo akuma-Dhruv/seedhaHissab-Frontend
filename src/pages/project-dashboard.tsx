@@ -17,6 +17,7 @@ import { Layout } from '@/components/layout';
 import { TransactionList } from '@/components/transaction-list';
 import { VendorLedgerTable } from '@/components/vendor-ledger-table';
 import { PartnerSettlementTable } from '@/components/partner-settlement-table';
+import { RemindersWidget } from '@/components/reminders/reminders-widget';
 import type { Project, Partner, Vendor, ProjectSummaryResponse } from '@/lib/types';
 import { motion } from 'framer-motion';
 
@@ -178,7 +179,12 @@ export default function ProjectDashboardPage() {
               <TabsTrigger value="settlement" data-testid="tab-settlement">Settlement</TabsTrigger>
             </TabsList>
 
-            <TabsContent value="transactions" className="mt-4">
+            <TabsContent value="transactions" className="mt-4 space-y-4">
+              <RemindersWidget
+                projectId={projectId}
+                title="Project reminders"
+                testIdPrefix="project-reminders"
+              />
               <TransactionList projectId={projectId!} />
             </TabsContent>
 

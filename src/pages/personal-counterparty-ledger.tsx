@@ -17,6 +17,7 @@ import { HistoryDialog } from '@/components/ledger/history-dialog';
 import { OmitConfirmDialog } from '@/components/ledger/omit-confirm-dialog';
 import { BalanceHeader } from '@/components/ledger/balance-line';
 import { useOmitPersonalTransaction } from '@/hooks/use-personal-ledger';
+import { RemindersWidget } from '@/components/reminders/reminders-widget';
 
 export default function PersonalCounterpartyLedgerPage() {
   const navigate = useNavigate();
@@ -95,6 +96,12 @@ export default function PersonalCounterpartyLedgerPage() {
               </CardContent>
             </Card>
           )}
+
+          <RemindersWidget
+            counterpartyName={counterpartyName}
+            title={`Reminders for ${counterpartyName}`}
+            testIdPrefix="ledger-reminders"
+          />
 
           <div className="flex items-center justify-between flex-wrap gap-3">
             <div className="flex items-center gap-2">

@@ -1,5 +1,5 @@
 import { useNavigate, Link, useLocation } from 'react-router-dom';
-import { Moon, Sun, LogOut, LayoutGrid, FolderKanban, User } from 'lucide-react';
+import { Moon, Sun, LogOut, LayoutGrid, FolderKanban, User, Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useTheme } from '@/components/theme-provider';
 import { removeToken } from '@/lib/auth';
@@ -20,6 +20,7 @@ export function Layout({ children }: LayoutProps) {
 
   const isProjectsActive = location.pathname.startsWith('/projects');
   const isPersonalActive = location.pathname.startsWith('/personal');
+  const isRemindersActive = location.pathname.startsWith('/reminders');
 
   return (
     <div className="min-h-screen bg-background">
@@ -53,6 +54,18 @@ export function Layout({ children }: LayoutProps) {
             >
               <User className="w-4 h-4" />
               <span className="hidden sm:inline">Personal</span>
+            </Link>
+            <Link
+              to="/reminders"
+              data-testid="nav-reminders"
+              className={`flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-md transition-colors ${
+                isRemindersActive
+                  ? 'bg-primary/10 text-primary font-medium'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+              }`}
+            >
+              <Bell className="w-4 h-4" />
+              <span className="hidden sm:inline">Reminders</span>
             </Link>
           </nav>
           <div className="flex items-center gap-2 ml-auto">

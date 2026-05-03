@@ -88,6 +88,44 @@ export interface CounterpartySummary {
   direction: CounterpartyDirection;
 }
 
+export type ReminderStatus = 'PENDING' | 'COMPLETED' | 'SNOOZED' | 'ARCHIVED';
+
+export interface Reminder {
+  id: string;
+  title: string;
+  description?: string;
+  /** ISO date string (YYYY-MM-DD) interpreted in Asia/Kolkata. */
+  dueDate: string;
+  status: ReminderStatus;
+  /** Stored server-side as the transaction's stable root id. */
+  linkedTransactionId?: string;
+  linkedProjectId?: string;
+  linkedCounterpartyName?: string;
+  createdByUserId: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ReminderRequest {
+  title: string;
+  description?: string;
+  dueDate: string;
+  linkedTransactionId?: string;
+  linkedProjectId?: string;
+  linkedCounterpartyName?: string;
+}
+
+export interface ReminderSnoozeRequest {
+  newDueDate: string;
+}
+
+export const REMINDER_STATUS_LABELS: Record<ReminderStatus, string> = {
+  PENDING: 'Pending',
+  COMPLETED: 'Done',
+  SNOOZED: 'Snoozed',
+  ARCHIVED: 'Archived',
+};
+
 export interface PagedResponse<T> {
   data: T[];
   page: number;
